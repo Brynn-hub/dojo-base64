@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>dojo base64!</title>
+  <style>
+    .container {
+      width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      box-shadow: inset 0 0.0625em 0.125em #000;
+      border-radius: 4px;
+    }
+
+    .head {
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 20px;
+      border: 1px dashed #dbdbdb;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    input {
+      display: none;
+    }
+
+    button {
+      display: inline-flex;
+      font-size: 1rem;
+      border-radius: 4px;
+      line-height: 1.5;
+      border: 1px solid transparent;
+      background-color: #00c4a7;
+      cursor: pointer;
+      justify-content: center;
+      padding-bottom: calc(.5em - 1px);
+      padding-left: 1em;
+      padding-right: 1em;
+      padding-top: calc(.5em - 1px);
+      text-align: center;
+      white-space: nowrap;
+      box-shadow: none;
+      height: 2.5em;
+      color: #fff;
+    }
+
+    textarea {
+      display: block;
+      height: 200px;
+      max-width: 100%;
+      min-width: 100%;
+      padding: calc(.75em - 1px);
+      resize: vertical;
+      box-shadow: inset 0 0.0625em 0.125em rgba(10, 10, 10, .05);
+      width: 100%;
+      background-color: #fff;
+      border-color: #dbdbdb;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div data-dojo-type="Area"></div>
+    <input type="file">
+    <textarea></textarea>
+  </div>
+  <script src="./source/dojo/dojo.js" data-dojo-config="async: true"></script>
+  <script>
+    require([
+      'dojo/query',
+      "dojo/topic",
+      './util/index.js',
+    ], function (query, topic, util) {
+      const input = query('input');
+      const container = query('.container');
+      const textarea = query('textarea');
+
+      input.on('change', handleInput);
+      function handleInput(e) {
+        util.getBase64(e.target.files[0]).then(value => {
+          textarea[0].value = value;
+        });
+      }
+
+      topic.subscribe("handleButtonClick", function () {
+        input[0].click();
+      });
+      topic.subscribe("handleDropClick", function (e) {
+        e.preventDefault();
+        util.getBase64(e.dataTransfer.files[0]).then(value => {
+          textarea[0].value = value;
+        });
+      });
+      topic.subscribe("handlePasteClick", function (e) {
+        util.getBase64(e.clipboardData.files[0]).then(value => {
+          textarea[0].value = value;
+        });
+      });
+
+    });
+    require([
+      "dojo/_base/declare", "dojo/parser", "dojo/ready", "dojo/topic",
+      "dijit/_WidgetBase", "dijit/_TemplatedMixin", "dojo/text!./templates/Area.html"
+    ], function (declare, parser, ready, topic, _WidgetBase, _TemplatedMixin, template) {
+
+      declare("Area", [_WidgetBase, _TemplatedMixin], {
+        templateString: template,
+        handleButton: function () {
+          topic.publish("handleButtonClick");
+        },
+        handleDrop: function (e) {
+          topic.publish("handleDropClick", e);
+        },
+        handleDragover: function (e) {
+          e.preventDefault();
+        },
+        handlePaste: function (e) {
+          topic.publish("handlePasteClick", e);
+        }
+      });
+      ready(function () {
+        // Call the parser manually so it runs after our widget is defined, and page has finished loading
+        parser.parse();
+      });
+    });
+
+  </script>
+</body>
+
+</html>
